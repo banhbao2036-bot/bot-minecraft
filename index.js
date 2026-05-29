@@ -15,45 +15,66 @@ function createMyBot() {
     bot.on('spawn', () => {
         console.log('==> THÀNH CÔNG: Bot đã vào game và bắt đầu quậy!');
         
+        // Xóa loop cũ nếu có để tránh trùng lặp khi hồi sinh lại
         if (bot.randomActionInterval) clearInterval(bot.randomActionInterval);
         
+        // CỨ MỖI 5 GIÂY (5000ms) LÀM 1 HÀNH ĐỘNG NGẪU NHIÊN
         bot.randomActionInterval = setInterval(() => {
             const actions = ['jump', 'forward', 'back', 'swing', 'look', 'chat'];
             const randomAction = actions[Math.floor(Math.random() * actions.length)];
             
+            // Xóa toàn bộ trạng thái di chuyển cũ để không bị chạy một mạch xuống vực
             bot.clearControlStates();
 
-            switch(randomAction) {
-                case 'jump':
-                    bot.setControlState('jump', true);
-                    setTimeout(() => bot.setControlState('jump', false), 500);
-                    break;
-                case 'forward':
-                    bot.setControlState('forward', true);
-                    setTimeout(() => bot.setControlState('forward', false), 1000);
-                    break;
-                case 'back':
-                    bot.setControlState('back', true);
-                    setTimeout(() => bot.setControlState('back', false), 1000);
-                    break;
-                case 'swing':
-                    bot.swingHand('right');
-                    break;
-                case 'look':
-                    const yaw = Math.random() * Math.PI * 2;
-                    const pitch = (Math.random() - 0.5) * Math.PI / 2;
-                    bot.look(yaw, pitch);
-                    break;
-                case 'chat':
-                    const messages = ['Ui da!', 'Server ngon quá nha', 'Treo game tí thôi', 'Halo mọi người'];
-                    const randomMsg = messages[Math.floor(Math.random() * messages.length)];
-                    bot.chat(randomMsg);
-                    break;
+            // Sử dụng try...catch để bọc toàn bộ hành động, lỗi gì cũng không sợ sập code
+            try {
+                switch(randomAction) {
+                    case 'jump':
+                        bot.setControlState('jump', true);
+                        setTimeout(() => {
+                            try { bot.setControlState('jump', false); } catch(e) {}
+                        }, 500);
+                        break;
+                        
+                    case 'forward':
+                        bot.setControlState('forward', true);
+                        setTimeout(() => {
+                            try { bot.setControlState('forward', false); } catch(e) {}
+                        }, 1000); // Đi tới 1 giây
+                        break;
+                        
+                    case 'back':
+                        bot.setControlState('back', true);
+                        setTimeout(() => {
+                            try { bot.setControlState('back', false); } catch(e) {}
+                        }, 1000); // Đi lùi 1 giây
+                        break;
+                        
+                    case 'swing':
+                        // Sửa lỗi swingHand chuẩn phiên bản mới và bọc an toàn
+                        bot.swingHand(); 
+                        break;
+                        
+                    case 'look':
+                        // Xoay đầu nhìn sang hướng ngẫu nhiên
+                        const yaw = Math.random() * Math.PI * 2;
+                        const pitch = (Math.random() - 0.5) * Math.PI / 2;
+                        bot.look(yaw, pitch);
+                        break;
+                        
+                    case 'chat':
+                        const messages = ['Ui da!', 'Server ngon quá nha', 'Treo game tí thôi', 'Halo mọi người'];
+                        const randomMsg = messages[Math.floor(Math.random() * messages.length)];
+                        bot.chat(randomMsg);
+                        break;
+                }
+            } catch (actionError) {
+                console.log('=> Bỏ qua một hành động bị lỗi lỗi:', actionError.message);
             }
         }, 5000); 
     });
 
-    // TỰ KẾT NỐI LẠI NẾU BỊ SERVER ĐÁ HOẶC LỖI MẠNG (XỬ LÝ DỨT ĐIỂM ECONNRESET)
+    // TỰ ĐỘNG KẾT NỐI LẠI KHI BỊ KICK HOẶC LỖI MẠNG (XỬ LÝ DỨT ĐIỂM ECONNRESET)
     bot.on('kicked', (reason) => {
         console.log('==> Bị Kick:', JSON.stringify(reason));
         handleReconnect();
@@ -71,10 +92,11 @@ function createMyBot() {
     }
 }
 
+// Kích hoạt chạy hệ thống Bot
 createMyBot();
 
-// --- TẠO WEB CỔNG 3000 ĐỂ RENDER ĐỌC ĐƯỢC ---
+// --- TẠO WEB CỔNG 3000 ĐỂ PHỤC VỤ UPTIMEROBOT VÀ RENDER ---
 const express = require('express');
 const app = express();
-app.get('/', (req, res) => res.send('Bot dang chay nha!'));
+app.get('/', (req, res) => res.send('Bot Minecraft dang hoat dong 24/7 ngon lanh!'));
 app.listen(process.env.PORT || 3000, () => console.log('Web ao phuc vu UptimeRobot da san sang tai port 3000'));
