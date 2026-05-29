@@ -1,7 +1,7 @@
 const mineflayer = require('mineflayer');
 
 const botOptions = {
-    host: 'Veanty.aternos.me', 
+    host: 'marlin.aternos.host', 
     port: 34795,                 
     username: 'Bot_247'
 };
