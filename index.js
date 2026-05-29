@@ -3,8 +3,7 @@ const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Giữ Web Server chạy trên Render
-app.get('/', (req, res) => res.send('Bot Veanty đã vá lỗi di chuyển và chào hỏi!'));
+app.get('/', (req, res) => res.send('Bot Veanty đã hạn chế chào hỏi (Random)!'));
 app.listen(PORT, () => console.log(`Web server chạy tại cổng ${PORT}`));
 
 const botOptions = {
@@ -15,98 +14,96 @@ const botOptions = {
 };
 
 const randomMessages = [
-    "Anh em choi zui ze",
-    "sever toan trai zinh gai dep",
-    "chuc mn nghi he zui ze",
-    "Co j cu alo admin t la helper",
-    "Skibidi dep zai",
-    "omggg"
+   "Anh em choi zui ze", "sever toan trai zinh gai dep", "chuc mn nghi he zui ze", "Co j cu alo admin t la helper", "Skibidi dep zai", "omggg"
 ];
 
-console.log('--- KÍCH HOẠT BOT VÀ VÁ LỖI HỆ THỐNG ---');
+console.log('--- KÍCH HOẠT BOT: CHẾ ĐỘ CHÀO NGẪU NHIÊN HẠN CHẾ ---');
 let bot;
-let supervisedPlayers = []; // Danh sách để theo dõi người chơi đang online
+let supervisedPlayers = []; 
 
 function createMinecraftBot() {
     bot = mineflayer.createBot(botOptions);
 
     bot.on('login', () => {
-        console.log('==> Bot đã đăng nhập vào server!');
-        supervisedPlayers = []; // Reset danh sách khi bot vào lại game
+        console.log('==> Bot đã vào server!');
+        supervisedPlayers = []; 
     });
     
     bot.on('spawn', () => {
-        console.log('==> Bot_247 đã spawn thành công!');
+        console.log('==> Bot_247 đã sẵn sàng!');
 
         // ==========================================
-        // 🛠️ SỬA LỖI 1: ÉP BOT PHẢI DI CHUYỂN & TỰ ĐỘNG LẤY BLOCK ĐỂ ĐẶT
+        // 1. DI CHUYỂN VÀ ĐẶT BLOCK (GIỮ NGUYÊN)
         // ==========================================
         setInterval(async () => {
             if (!bot || !bot.entity) return;
 
-            // Hành động 1: Ép bot di chuyển tiến lên rồi lùi lại để chống AFK (Không cần điều kiện block)
             bot.setControlState('forward', true);
             setTimeout(() => {
                 if (bot && bot.entity) {
                     bot.setControlState('forward', false);
-                    bot.setControlState('back', true); // Đi lùi lại vị trí cũ
+                    bot.setControlState('back', true);
                     setTimeout(() => {
                         if (bot && bot.entity) bot.setControlState('back', false);
                     }, 200);
                 }
             }, 200);
 
-            // Hành động 2: Tự tìm block trong hành trang để đặt
-            // Tìm bất kỳ block nào trong túi đồ (loại trừ các món không phải block)
-            const itemInInventory = bot.inventory.items().find(item => item.name.includes('stone') || item.name.includes('dirt') || item.name.includes('cobblestone') || item.name.includes('planks'));
+            const itemInInventory = bot.inventory.items().find(item => 
+                item.name.includes('stone') || item.name.includes('dirt') || 
+                item.name.includes('cobblestone') || item.name.includes('planks')
+            );
             
             if (itemInInventory) {
                 try {
-                    // Ép bot phải cầm block đó lên tay
                     await bot.equip(itemInInventory, 'hand');
-                    
-                    // Tìm vị trí block dưới chân để đặt lên
                     const referenceBlock = bot.blockAt(bot.entity.position.offset(0, -1, 0));
                     if (referenceBlock) {
-                        // Thử đặt block
                         await bot.placeBlock(referenceBlock, new mineflayer.vec3(0, 1, 0));
                     }
-                } catch (err) {
-                    // Bỏ qua lỗi nếu không đặt được block (vướng chân hoặc hết chỗ đặt)
-                }
+                } catch (err) {}
             }
-        }, 2000); // Thực hiện liên tục mỗi 2 giây
+        }, 2000); 
 
         // ==========================================
-        // 🛠️ SỬA LỖI 2: CHÀO CHÍNH XÁC 100% KHÔNG BỎ SÓT AI
+        // 2. 🛠️ CƠ CHẾ CHÀO NGẪU NHIÊN (TỶ LỆ 35%)
         // ==========================================
         setInterval(() => {
             if (!bot || !bot.players) return;
 
-            // Lấy danh sách tên tất cả người chơi hiện tại trong server
             const currentPlayers = Object.keys(bot.players);
 
             currentPlayers.forEach(username => {
-                // Bỏ qua chính bản thân bot
                 if (username === bot.username) return;
 
-                // Nếu tên người này chưa có trong danh sách theo dõi của bot -> Nghĩa là họ mới vào!
+                // Phát hiện người chơi mới vào
                 if (!supervisedPlayers.includes(username)) {
-                    supervisedPlayers.push(username); // Thêm họ vào danh sách đã chào
+                    supervisedPlayers.push(username); // Lưu tên lại để không quét trùng
                     
-                    // Chat chào mừng ngay lập tức
-                    bot.chat(`chao bn @${username} skibdi nha`);
-                    console.log(`[👋 CHÀO MỪNG CHÍNH XÁC]: Đã chào người chơi mới: ${username}`);
+                    // QUAY XỔ SỐ: Chỉ có 35% cơ hội được chào (Trung bình 3-4 người vào thì chào 1-2 người)
+                    const tiLeChao = Math.random(); // Trả về số từ 0 đến 1
+                    if (tiLeChao < 0.35) { 
+                        // Thỏa mãn tỉ lệ -> Tiến hành chào
+                        setTimeout(() => {
+                            if (bot && bot.entity) {
+                                bot.chat(`chao mem @${username} nhem`);
+                                console.log(`[🎲 HÊN XUI - ĐÃ CHÀO]: Tỷ lệ trúng, đã chào: ${username}`);
+                            }
+                        }, 3000); // Chờ 3 giây sau khi vào rồi mới chào cho giống người thật
+                    } else {
+                        // Tỷ lệ xịt -> Im lặng bơ luôn
+                        console.log(`[🎲 HÊN XUI - BƠ LUÔN]: Tỷ lệ xịt, bot quyết định im lặng với: ${username}`);
+                    }
                 }
             });
 
-            // Lọc lại danh sách: Nếu có ai đó đã thoát game, xóa tên họ ra để lần sau họ vào lại còn chào tiếp
+            // Nếu họ out game thì xóa khỏi danh sách để lần sau vào lại còn quay số tiếp
             supervisedPlayers = supervisedPlayers.filter(username => currentPlayers.includes(username));
 
-        }, 4000); // Quét danh sách người chơi mỗi 4 giây một lần
+        }, 4000); 
 
         // ==========================================
-        // TÍNH NĂNG 3: CỨ 10 PHÚT CHAT NGẪU NHIÊN 1 LẦN
+        // 3. CHAT TỰ ĐỘNG MỖI 10 PHÚT (GIỮ NGUYÊN)
         // ==========================================
         setInterval(() => {
             if (bot && bot.entity) {
@@ -115,11 +112,10 @@ function createMinecraftBot() {
                 bot.chat(message);
                 console.log(`[👉 CHAT TỰ ĐỘNG]: Bot đã chat: "${message}"`);
             }
-        }, 600000); // 10 phút
+        }, 600000); 
 
     });
     
-    // Tự động kết nối lại khi bị thoát
     bot.on('end', () => {
         console.log('==> Mất kết nối! Đang thử vào lại sau 15 giây...');
         setTimeout(createMinecraftBot, 15000); 
